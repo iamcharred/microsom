@@ -1,7 +1,6 @@
 import numpy as np
 import time
 import pickle
-import torch
 
 from numpy import (array, unravel_index, linalg, random, subtract, max,
                    power, exp, zeros, arange, meshgrid, tile)
