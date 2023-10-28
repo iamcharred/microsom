@@ -1,31 +1,10 @@
 import numpy as np
 import time
 import pickle
-
+import somutils
 from numpy import (array, unravel_index, linalg, random, subtract, max,
                    power, exp, zeros, arange, meshgrid, tile)
-from collections import defaultdict 
-
-
-
-def _build_iteration_indexes(data_len, num_iterations,
-                             random_generator, verbose=False):
-    """Returns an iterable with the indexes of the samples
-    to pick at each iteration of the training.
-
-    If random_generator is not None, it must be an instance
-    of numpy.random.RandomState and it will be used
-    to randomize the order of the samples."""
-    iterations_per_epoch = arange(data_len)
-    if random_generator:
-        random_generator.shuffle(iterations_per_epoch)
-    iterations = tile(iterations_per_epoch, num_iterations)
-
-    if verbose:
-        print("total iterations ", iterations.shape[0])
-        print("num epochs", num_iterations)
-
-    return iterations
+from collections import defaultdict
 
 class SOM:
     def __init__(self, x, y, num_dim, learning_rate = 0.1, sigma=None,
@@ -223,7 +202,7 @@ class SOM:
         data_len = len(data)
         assert len(data[0]) == self._num_dim, "Data dimension and input dimension must be equal!"
 
-        iterations = _build_iteration_indexes(data_len, num_iteration,
+        iterations = somutils.build_iteration_indexes(data_len, num_iteration,
                                               self._random_generator, verbose=True)
 
         self._lambda = num_iteration / np.log(self._sigma)
