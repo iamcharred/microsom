@@ -34,4 +34,4 @@ print(x,y,d,epochs,sigma,learning_rate)
 weights = kohosom4.weights
 plt.imshow(weights)
 
-kohosom4.pickle_model('./models/kohosom4.pkl')
+kohosom4.pickle_model('./models/kohonen_som.pkl')
