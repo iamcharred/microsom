@@ -1,1 +1,4 @@
+Flask==3.0.0
+matplotlib==3.4.2
 numpy==1.21.0
+utils==1.0.1

@@ -1,31 +1,11 @@
 import numpy as np
 import time
 import pickle
-
+import somutils
 from numpy import (array, unravel_index, linalg, random, subtract, max,
                    power, exp, zeros, arange, meshgrid, tile)
-from collections import defaultdict 
-
-
-
-def _build_iteration_indexes(data_len, num_iterations,
-                             random_generator, verbose=False):
-    """Returns an iterable with the indexes of the samples
-    to pick at each iteration of the training.
-
-    If random_generator is not None, it must be an instance
-    of numpy.random.RandomState and it will be used
-    to randomize the order of the samples."""
-    iterations_per_epoch = arange(data_len)
-    if random_generator:
-        random_generator.shuffle(iterations_per_epoch)
-    iterations = tile(iterations_per_epoch, num_iterations)
-
-    if verbose:
-        print("total iterations ", iterations.shape[0])
-        print("num epochs", num_iterations)
-
-    return iterations
+from collections import defaultdict
+from numpy.linalg import norm
 
 class SOM:
     def __init__(self, x, y, num_dim, learning_rate = 0.1, sigma=None,
@@ -62,21 +42,18 @@ class SOM:
         else:
             self._sigma = sigma
 
-        self._weights = np.zeros((x, y, num_dim))
-
         if random_seed is None:
             # Seed generator with system time
             self._random_generator = random.RandomState(int(time.time()))
         else:
             self._random_generator = random.RandomState(random_seed)
 
-        for i in range(self._x):
-            for j in range(self._y):
-                self._weights[i,j] = self._random_generator.random((self._num_dim))
+        self._weights = self._random_generator.random((self._x, self._y, self._num_dim)).astype('float64')
+        #self._weights = self._random_generator.rand(self._x, self._y, self._num_dim).astype('float64')*2-1
+        #self._weights /= linalg.norm(self._weights, axis=-1, keepdims=True)
 
         # initialize the distance map
         self._distance_map = zeros((x, y))
-
 
         # initialize grid for neighborhood function
         self._neigx = arange(x)
@@ -110,10 +87,11 @@ class SOM:
         """Returns the dimension of the input vectors and weights."""
         return self._num_dim
 
-    # @property
-    # def distance_map(self):
-    #     """Returns the distance map of the weights."""
-    #     return self._distance_map
+    @property
+    def distance_map(self):
+        """Returns the distance map of the weights."""
+        return self._distance_map
+
 
     def _gaussian(self, c, sigma):
         """Returns a Gaussian centered in c."""
@@ -121,6 +99,7 @@ class SOM:
         ax = exp(-power(self._xx-self._xx.T[c], 2)/d)
         ay = exp(-power(self._yy-self._yy.T[c], 2)/d)
         return (ax * ay).T  # the external product gives a matrix
+
 
     def _asymptotic_decay(self, param, t):
         """Decay function of the learning process.
@@ -134,16 +113,18 @@ class SOM:
 
         return param * np.exp(-t / self._lambda)
 
-    def _euclidean_distance(self, current_input_vector, w):
-        """Returns the squared euclidean distance between two vectors.
 
-        Parameters
-        ----------
-        current_input_vector : np.array
-            Current input vector to use for training.
-        """
+    # def _euclidean_distance(self, current_input_vector, w):
+    #     """Returns the squared euclidean distance between two vectors.
 
-        return linalg.norm(subtract(current_input_vector, w), axis=-1)
+    #     Parameters
+    #     ----------
+    #     current_input_vector : np.array
+    #         Current input vector to use for training.
+    #     """
+
+    #     return linalg.norm(subtract(current_input_vector, w), axis=-1)
+
 
     def _compute_distance_map(self, current_input_vector):
         """Updates matrix distance map, in this matrix
@@ -158,6 +139,7 @@ class SOM:
         # for i in range(self._x):
         #     for j in range(self._y):
         #         self._distance_map[i,j] = self._euclidean_distance(current_input_vector, self._weights[i,j])
+
 
     def winner(self, current_input_vector, verbose=False):
         """Get coordinates of winning neuron for the sample.
@@ -177,6 +159,7 @@ class SOM:
 
         return unravel_index(self._distance_map.argmin(),
                              self._distance_map.shape)
+
 
     def _update(self, current_input_vector, win, t, verbose=False):
         """Updates the weights of the neurons in the amp.
@@ -200,14 +183,11 @@ class SOM:
         # alpha * neighborhood_function
         g = self._gaussian(win, sig)*alpha
 
-        # print("g shape {}".format(g.shape))
-        # print(current_input_vector.shape)
-        # print("weights shape {}".format(self._weights.shape))
-        # print(self._weights)
-        # print(np.tile(np.array(current_input_vector), (self._x, self._y, 1)).shape)
-
         # w_new = w_t + aplha * gaussian_neighborhood_function * (x-w)
-        self._weights += np.einsum('ij, ijk->ijk', g, np.subtract(np.tile(current_input_vector, (self._x, self._y, 1) ),self._weights))
+        self._weights += np.einsum('ij, ijk->ijk', g, current_input_vector-self._weights)
+        #self._weights += np.einsum('ij, ijk->ijk', g, np.subtract(np.tile(current_input_vector, (self._x, self._y, 1) ),self._weights))
+        # self._weights += g[:, :, np.newaxis] * (current_input_vector - self._weights)
+
 
     def train(self, data, num_iteration, verbose=False):
         """Trains the SOM.
@@ -223,8 +203,8 @@ class SOM:
         data_len = len(data)
         assert len(data[0]) == self._num_dim, "Data dimension and input dimension must be equal!"
 
-        iterations = _build_iteration_indexes(data_len, num_iteration,
-                                              self._random_generator, verbose=True)
+        iterations = somutils.build_iteration_indexes(data_len, num_iteration,
+                                              self._random_generator)
 
         self._lambda = num_iteration / np.log(self._sigma)
 
@@ -235,7 +215,6 @@ class SOM:
             self._update(data[current_input_index], self.winner(data[current_input_index], verbose=False), i, verbose=True)
 
 
-    #TODO: implement
     def win_map(self, data, return_indices=False):
         """Returns a dictionary wm where wm[(i,j)] is a list with:
         - all the patterns that have been mapped to the position (i,j),
@@ -243,11 +222,44 @@ class SOM:
         - all indices of the elements that have been mapped to the
           position (i,j) if return_indices=True"""
 
+        assert len(data[0]) == self._num_dim, "Data dimension and input dimension must be equal!"
+
         winmap = defaultdict(list)
         for i, x in enumerate(data):
             winmap[self.winner(x)].append(i if return_indices else x)
         return winmap
 
+    def predict(self, data):
+        """Get coordinates of the winning neuron for the input data.
+
+        Parameters
+        ----------
+        data : np.array
+            Input data.
+        """
+
+        assert len(data) == self._num_dim, "Data dimension and input dimension must be equal!"
+        return self.winner(data)
+
     def pickle_model(self, filename):
+        """Save the SOM object to a file.
+
+        Parameters
+        ----------
+        filename : text
+            File path and filename where the model will be saved.
+        """
+
         with open(filename, 'wb') as f:
             pickle.dump(self, f)
+
+    def quantization_error(self, data):
+        """Returns the quantization error computed as the average
+        distance between each input sample and its best matching unit."""
+
+        assert len(data[0]) == self._num_dim, "Data dimension and input dimension must be equal!"
+        error = 0
+        for i in range(len(data)):
+            error += norm(data[i] - self._weights[self.winner(data[i])])
+        error /= len(data)
+        return error
