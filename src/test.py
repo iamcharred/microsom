@@ -60,16 +60,6 @@ class TestSOM(unittest.TestCase):
         assert self.som.predict(self._input_data[1]) == self.som.winner(self._input_data[1])
         log(green("PASS"), test_name, "")
 
-    # def test_win_map(self):
-    #         winners = self.som.win_map([[5.0], [2.0]])
-    #         assert winners[(2, 3)][0] == [5.0]
-    #         assert winners[(1, 1)][0] == [2.0]
-
-    # def test_win_map_indices(self):
-    #         winners = self.som.win_map([[5.0], [2.0]], return_indices=True)
-    #         assert winners[(2, 3)] == [0]
-    #         assert winners[(1, 1)] == [1]
-
     def test_quantization_error(self):
             assert_almost_equal(self.som.quantization_error(self._input_data), 1.73205080)
 
