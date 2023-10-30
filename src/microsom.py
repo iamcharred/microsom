@@ -2,8 +2,8 @@ import numpy as np
 import time
 import pickle
 import somutils
-from numpy import (array, unravel_index, linalg, random, subtract, max,
-                   power, exp, zeros, arange, meshgrid, tile)
+from numpy import (unravel_index, linalg, random,
+                   power, exp, zeros, arange, meshgrid)
 from collections import defaultdict
 from numpy.linalg import norm
 
@@ -201,7 +201,7 @@ class SOM:
             The weights will be updated len(data)*num_iteration times.
         """
         data_len = len(data)
-        assert len(data[0]) == self._num_dim, "Data dimension and input dimension must be equal!"
+        assert len(data[0]) == self._num_dim, "Data dimension and input dimension must be equal! {0} , {1}".format(self._num_dim, len(data[0]))
 
         iterations = somutils.build_iteration_indexes(data_len, num_iteration,
                                               self._random_generator)
@@ -222,7 +222,8 @@ class SOM:
         - all indices of the elements that have been mapped to the
           position (i,j) if return_indices=True"""
 
-        assert len(data[0]) == self._num_dim, "Data dimension and input dimension must be equal!"
+        # assert len(data[0]) == self._num_dim, "Data dimension and input dimension must be equal!"
+        assert len(data[0]) == self._num_dim, "Data dimension and input dimension must be equal! {0} , {1}".format(self._num_dim, len(data[0]))
 
         winmap = defaultdict(list)
         for i, x in enumerate(data):
@@ -238,7 +239,9 @@ class SOM:
             Input data.
         """
 
-        assert len(data) == self._num_dim, "Data dimension and input dimension must be equal!"
+        # assert len(data) == self._num_dim, "Data dimension and input dimension must be equal!"
+        assert len(data[0]) == self._num_dim, "Data dimension and input dimension must be equal! {0} , {1}".format(self._num_dim, len(data[0]))
+
         return self.winner(data)
 
     def pickle_model(self, filename):
@@ -257,7 +260,9 @@ class SOM:
         """Returns the quantization error computed as the average
         distance between each input sample and its best matching unit."""
 
-        assert len(data[0]) == self._num_dim, "Data dimension and input dimension must be equal!"
+        # assert len(data[0]) == self._num_dim, "Data dimension and input dimension must be equal!"
+        assert len(data[0]) == self._num_dim, "Data dimension and input dimension must be equal! {0} , {1}".format(self._num_dim, len(data[0]))
+
         error = 0
         for i in range(len(data)):
             error += norm(data[i] - self._weights[self.winner(data[i])])
