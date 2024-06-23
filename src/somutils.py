@@ -1,5 +1,3 @@
-import numpy as np
-
 from numpy import (arange, tile)
 
 def build_iteration_indexes(data_len, num_iterations,

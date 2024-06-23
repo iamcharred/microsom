@@ -1,11 +1,9 @@
-import os
-import numpy as np
-import sys
-import matplotlib.pyplot as plt
 import time
-import pickle
-import microsom as msom
 
+import matplotlib.pyplot as plt
+import numpy as np
+
+import microsom as msom
 
 # load input_data from file
 input_data = np.loadtxt('./data/input_data.txt')

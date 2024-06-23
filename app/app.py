@@ -1,14 +1,28 @@
 import sys
 import pickle
-import numpy as np
 import json
-sys.path.append('./src')
-import microsom as msom
-
+import numpy as np
 from flask import Flask, jsonify, request
 
+sys.path.append('./src')
+
 class NpEncoder(json.JSONEncoder):
+    """
+    Custom JSON encoder for numpy objects.
+    """
     def default(self, obj):
+        """
+        Convert numpy objects to Python objects for JSON serialization.
+
+        Args:
+            obj (Any): The object to be serialized.
+
+        Returns:
+            Any: The serialized object.
+
+        Raises:
+            TypeError: If the object cannot be serialized.
+        """
         if isinstance(obj, np.integer):
             return int(obj)
         if isinstance(obj, np.floating):
@@ -23,26 +37,29 @@ with open('./models/kohonen_som.pkl', 'rb') as f:
 app = Flask(__name__)
 
 @app.route('/api/weights', methods=['GET'])
-def get_weights():
+def get_weights() -> str:
+    """
+    Get the weights of the loaded model.
+
+    Returns:
+        str: JSON string representing the weights of the loaded model.
+    """
     return jsonify(loaded_model.weights.tolist())
 
 @app.route('/api/predict', methods=['POST'])
-def predict():
+def predict() -> str:
+    """
+    Predict the winner based on the input data.
+
+    Returns:
+        str: JSON string representing the predicted winner.
+    """
     data = request.get_json()
-    # print(data)
     input_data = np.array([np.fromstring(data['input'], dtype=float, sep=', ')])
-    # print("input ", input_data)
+    print(input_data)
     winner = loaded_model.predict(input_data)
-    # print(winner)
     response = json.dumps(winner, cls=NpEncoder)
     return jsonify(response), 200
-
-# @app.route('/api/items/<int:item_id>', methods=['GET'])
-# def get_item(item_id):
-#     item = next((item for item in data if item["id"] == item_id), None)
-#     if item is not None:
-#         return jsonify(item)
-#     return "Item not found", 404
 
 if __name__ == '__main__':
     app.run(debug=False)
